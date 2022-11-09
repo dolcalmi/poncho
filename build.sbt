@@ -1,5 +1,7 @@
 enablePlugins(ScalaNativePlugin)
 
+logLevel := Level.Debug
+
 scalaVersion          := "3.2.0"
 libraryDependencies   ++= Seq(
   "org.scodec" %%% "scodec-bits" % "1.1.32",
