@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - uses: pguyot/arm-runner-action@v2
       - uses: actions/create-release@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,6 +26,7 @@ jobs:
       - make-release
     steps:
       - uses: actions/checkout@v3
+      - uses: pguyot/arm-runner-action@v2
       - name: install podman
         run: |
           set -x
@@ -36,13 +38,13 @@ jobs:
           sudo apt autoremove -y
       - run: podman build . -t poncho-builder
       - run: podman run --rm -it -v "$(pwd)":'/poncho' poncho-builder
-      - run: mv target/scala-*/poncho-out poncho_x64
+      - run: mv target/scala-*/poncho-out poncho_arm
       - uses: actions/upload-artifact@v3
         with:
-          path: poncho_x64
-          name: poncho_x64
+          path: poncho_arm
+          name: poncho_arm
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: poncho_x64
+          files: poncho_arm
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: ${{ github.ref_name }}
