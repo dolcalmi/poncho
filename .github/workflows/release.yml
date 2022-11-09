@@ -19,14 +19,29 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
 
-  build-x86:
+  build-arm:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64]
+        include:
+        - arch: aarch64
+          cpu: cortex-a53
+          base_image: raspios_lite_arm64:latest
+          cpu_info: raspberrypi_zero2_w_arm64_w
     needs:
       - make-release
     steps:
       - uses: actions/checkout@v3
+      - uses: pguyot/arm-runner-action@v2
+        with:
+          base_image: ${{ matrix.base_image }}
+          cpu: ${{ matrix.cpu }}
+          cpu_info: ${{ matrix.cpu_info }}
       - name: install podman
         run: |
+          test `uname -m` = ${{ matrix.arch }}
+          grep Model /proc/cpuinfo
           set -x
           sudo apt-get remove -y podman docker-ce docker docker-engine docker.io containerd runc ||:
           curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$( lsb_release -rs )/Release.key | sudo apt-key add -
@@ -36,13 +51,13 @@ jobs:
           sudo apt autoremove -y
       - run: podman build . -t poncho-builder
       - run: podman run --rm -it -v "$(pwd)":'/poncho' poncho-builder
-      - run: mv target/scala-*/poncho-out poncho_x64
+      - run: mv target/scala-*/poncho-out poncho_arm
       - uses: actions/upload-artifact@v3
         with:
-          path: poncho_x64
-          name: poncho_x64
+          path: poncho_arm
+          name: poncho_arm
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: poncho_x64
+          files: poncho_arm
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: ${{ github.ref_name }}
