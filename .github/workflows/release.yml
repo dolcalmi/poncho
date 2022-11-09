@@ -19,30 +19,33 @@ jobs:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
 
-  build-x86:
+  build-arm:
     runs-on: ubuntu-latest
     needs:
       - make-release
     steps:
       - uses: actions/checkout@v3
-      - name: install podman
-        run: |
-          set -x
-          sudo apt-get remove -y podman docker-ce docker docker-engine docker.io containerd runc ||:
-          curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$( lsb_release -rs )/Release.key | sudo apt-key add -
-          echo  "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$( lsb_release -rs )/ /" | sudo tee /etc/apt/sources.list.d/podman.list /dev/null
-          sudo apt-get update
-          sudo apt-get install -y podman
-          sudo apt autoremove -y
-      - run: podman build . -t poncho-builder
-      - run: podman run --rm -it -v "$(pwd)":'/poncho' poncho-builder
-      - run: mv target/scala-*/poncho-out poncho_x64
+      - uses: pguyot/arm-runner-action@v2
+        with:
+          copy_artifact_path: poncho_arm
+          commands: |
+            uname -m
+            set -x
+            sudo apt-get remove -y podman docker-ce docker docker-engine docker.io containerd runc ||:
+            curl -L https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$( lsb_release -rs )/Release.key | sudo apt-key add -
+            echo  "deb https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/xUbuntu_$( lsb_release -rs )/ /" | sudo tee /etc/apt/sources.list.d/podman.list /dev/null
+            sudo apt-get update
+            sudo apt-get install -y podman
+            sudo apt autoremove -y
+            podman build . -t poncho-builder
+            podman run --rm -it -v "$(pwd)":'/poncho' poncho-builder
+            mv target/scala-*/poncho-out poncho_arm
       - uses: actions/upload-artifact@v3
         with:
-          path: poncho_x64
-          name: poncho_x64
+          path: poncho_arm
+          name: poncho_arm
       - uses: AButler/upload-release-assets@v2.0
         with:
-          files: poncho_x64
+          files: poncho_arm
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           release-tag: ${{ github.ref_name }}
